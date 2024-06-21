@@ -523,26 +523,6 @@ echo '</script>';
 echo "Error: " . $e->getMessage();
 }
 ?>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        // Fetch and display monthly views and requests
-        fetch('/network/fetch_hits.php')
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);  // Add this line for debugging
-                if (data.pageViews !== undefined && data.requests !== undefined) {
-                    changeSpeechBubbleText('Hello! ' + data.requests.toLocaleString() + ' requests, ' + data.pageViews.toLocaleString() + ' page views for 30 days! Advertise with us!');
 
-                } else {
-                    changeSpeechBubbleText('Error: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                changeSpeechBubbleText('Error: ' + error);
-            });
-    });
-
-
-</script>
 </body>
 </html>
