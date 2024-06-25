@@ -1,13 +1,6 @@
 <?php
-//ini_set('display_errors', 1);
-
 ini_set('max_execution_time', 300);
 
-//ini_set('memory_limit', '1024M');
-
-//ini_set('display_errors', 1);
-//ini_set('display_startup_errors', 1);
-//error_reporting(E_ALL);
 $header = "<meta name=\"keywords\" content=\"Vonwallace.com Real-time Website Cloudflare Statistics\">
     <meta name=\"description\" content=\"Vonwallace.com Real-time Website Cloudflare Statistics\">
 
@@ -34,15 +27,10 @@ margin-top: 40px;
 
 </style>
 
-
-
-
 <style>.hr1 {height: 0;width:40%;margin: auto;border-bottom: 1px solid white;}table, th, td {
-                                                                                  border: 1px solid white;
-                                                                                  border-collapse: collapse;
+  border: 1px solid white;
+  border-collapse: collapse;
 </style>
-
-
 ";
 
 echo "<!DOCTYPE html >
@@ -57,20 +45,28 @@ echo "<!DOCTYPE html >
     <meta property=\"og:image\" content=\"https://vonwallace.com/mstile-150x150.png\" />
     
     <style>.hr1 {height: 0;width:40%;margin: auto;border-bottom: 1px solid white;}table, th, td {
-                                                                                      border: 1px solid white;
-                                                                                      border-collapse: collapse;}table {
-                                                                                                                     width: 100%;
-                                                                                                                 }
+        border: 1px solid white;
+        border-collapse: collapse;}table {
+            width: 100%;
+        }
     </style>
-    
+    <!-- Clarity tracking code for http://vonwallace.com/ -->
+    <script>
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src=\"https://www.clarity.ms/tag/\"+i+\"?ref=bwt\";
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, \"clarity\", \"script\", \"h7m0khkumk\");
+    </script>
 
     <link href=\"/bootstrap/css/bootstrap.min.css\" rel=\"stylesheet\" crossorigin=\"anonymous\">
     <script src=\"/bootstrap/js/bootstrap.bundle.min.js\"  crossorigin=\"anonymous\"></script>
     <style>body {background-color: #000;
             color:#fff;}</style>
 
-    <title> Real-time Website Cloudflare Statistics | Vonwallace</title>", $header,
-" </head>
+    <title> Real-time Website Cloudflare Statistics | Vonwallace</title>
+" . $header . "
+ </head>
 <body>";
 
 $filename = "../menu/menu5.txt";
@@ -83,162 +79,50 @@ echo "<div class=\"wrapper\">
     <div class=\"hr1\"></div>
     <div class=\"htitle\">REAL-TIME WEBSITE CLOUDFLARE STATISTICS</div>
     <div class=\"hr1\"></div>
-    <div class=\"htime\">", date("l jS \of F Y h:i:s A"), "<br /></div><br /><br /><hr/>";
+    <div class=\"htime\">" . date("l jS \of F Y h:i:s A") . "<br /></div><br /><br /><hr/>";
 
-require 'vendor/autoload.php'; // Assuming Composer installation
+require 'vendor/autoload.php';
 
-$apiToken = '';
-$zoneId = '';
+$apiToken = 'ZQRIaltc9IxrDXpuPD41hKvsu7jtlOWhymkvkI6l';
+$zoneId = '0720a8e58608f4f584b8a14b6b16394d';
 
-// Define the time interval (e.g., 30 days)
-$timeInterval = 30; // Adjust this based on your requirements
+$timeInterval30 = 30;
+$timeInterval8 = 8;
 
-try {
-    $endDate = date('Y-m-d');
-    $startDate = date('Y-m-d', strtotime("-$timeInterval days"));
+$endDate = date('Y-m-d');
+$startDate30 = date('Y-m-d', strtotime("-$timeInterval30 days"));
+$startDate8 = date('Y-m-d', strtotime("-$timeInterval8 days"));
 
-    // Store data in an array
-    $tableData = [];
-    $totals = ['requests' => 0, 'pageViews' => 0, 'uniqueVisitors' => 0, 'requestsPerVisitor' => 0, 'pageViewsPerVisitor' => 0];
-
-// Prepare the query for the entire date range
-    $query = 'query {
-    viewer {
-        zones(filter: { zoneTag: "' . $zoneId . '" }) {
-            httpRequests1dGroups(
-                filter: {
-                    date_gt: "' . $startDate . '",
-                    date_leq: "' . $endDate . '"
-                }
-                orderBy: [date_ASC]
-                limit: 10000
-            ) {
-                dimensions { date }
-                uniq {
-                    uniques
-                }
-                sum {
-                    requests,
-                    pageViews
+$queries = [
+    'httpRequests' => 'query {
+        viewer {
+            zones(filter: { zoneTag: "' . $zoneId . '" }) {
+                httpRequests1dGroups(
+                    filter: {
+                        date_gt: "' . $startDate30 . '",
+                        date_leq: "' . $endDate . '"
+                    }
+                    orderBy: [date_ASC]
+                    limit: 10000
+                ) {
+                    dimensions { date }
+                    uniq {
+                        uniques
+                    }
+                    sum {
+                        requests,
+                        pageViews
+                    }
                 }
             }
         }
-    }
-}';
-
-// Initialize cURL handle
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, 'https://api.cloudflare.com/client/v4/graphql');
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['query' => $query]));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Authorization: Bearer ' . $apiToken,
-        'Content-Type: application/json'
-    ]);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-// Execute the cURL request
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-// Process the response
-    if ($response !== false) {
-        $data = json_decode($response, true);
-        if ($data !== null) {
-            // Access and process data for each day
-            foreach ($data['data']['viewer']['zones'][0]['httpRequests1dGroups'] as $group) {
-                $date = $group['dimensions']['date'];
-
-                $requests = $group['sum']['requests'];
-                $pageViews = $group['sum']['pageViews'];
-                $uniqueVisitors = $group['uniq']['uniques'];
-
-                // Aggregate data for the same date
-                if (isset($tableData[$date])) {
-                    $tableData[$date]['requests'] += $requests;
-                    $tableData[$date]['pageViews'] += $pageViews;
-                    $tableData[$date]['uniqueVisitors'] += $uniqueVisitors;
-                } else {
-                    $tableData[$date] = [
-                        'date' => $date,
-                        'requests' => $requests,
-                        'pageViews' => $pageViews,
-                        'uniqueVisitors' => $uniqueVisitors,
-                        'requestsPerVisitor' => 0,
-                        'pageViewsPerVisitor' => 0,
-                    ];
-                }
-
-                // Update totals
-                $totals['requests'] += $requests;
-                $totals['pageViews'] += $pageViews;
-                $totals['uniqueVisitors'] += $uniqueVisitors;
-            }
-
-            // Calculate requests per visitor and page views per visitor for each date
-            foreach ($tableData as $date => &$data) {
-                if ($data['uniqueVisitors'] > 0) {
-                    $data['requestsPerVisitor'] = $data['requests'] / $data['uniqueVisitors'];
-                    $data['pageViewsPerVisitor'] = $data['pageViews'] / $data['uniqueVisitors'];
-                } else {
-                    $data['requestsPerVisitor'] = 0;
-                    $data['pageViewsPerVisitor'] = 0;
-                }
-            }
-
-
-
-
-        } else {
-            echo "Error: Unable to decode JSON response.";
-        }
-    } else {
-        echo "API request failed.";
-    }
-
-
-
-
-
-    echo '<div style="text-align: center;"><div class="b_chart"><div id="your_div_id" style="width: 900px;height: 600px;"></div></div></div><hr/>';
-
-    echo '<h3>Comprehensive Site Performance Overview - Last 30 Days</h3>';
-    // Generate HTML table
-    echo '<div class="table_style1"><table border="1">';
-    echo '<tr><th>Date</th><th>Requests</th><th>Page Views</th><th>Unique Visitors</th><th>Requests per Visitor</th><th>Page Views per Visitor</th></tr>';
-
-    foreach ($tableData as $rowData) {
-        echo '<tr>';
-        echo '<td>' . $rowData['date'] . '</td>';
-        echo '<td>' . $rowData['requests'] . '</td>';
-        echo '<td>' . $rowData['pageViews'] . '</td>';
-        echo '<td>' . $rowData['uniqueVisitors'] . '</td>';
-        echo '<td>' . number_format($rowData['requestsPerVisitor'], 2) . '</td>'; // Format to 2 decimal places
-        echo '<td>' . number_format($rowData['pageViewsPerVisitor'], 2) . '</td>'; // Format to 2 decimal places
-        echo '</tr>';
-    }
-
-    // Display totals row
-    echo '<tr>';
-    echo '<td><strong>Totals</strong></td>';
-    echo '<td><strong>' . $totals['requests'] . '</strong></td>';
-    echo '<td><strong>' . $totals['pageViews'] . '</strong></td>';
-    echo '<td><strong>' . $totals['uniqueVisitors'] . '</strong></td>';
-    echo '<td><strong>' . number_format(($totals['uniqueVisitors'] > 0) ? $totals['requests'] / $totals['uniqueVisitors'] : 0, 2) . '</strong></td>'; // Format to 2 decimal places
-    echo '<td><strong>' . number_format(($totals['uniqueVisitors'] > 0) ? $totals['pageViews'] / $totals['uniqueVisitors'] : 0, 2) . '</strong></td>'; // Format to 2 decimal places
-    echo '</tr>';
-
-    echo '</table></div>';
-
-    $timeInterval = 8; // Adjust this based on your requirements
-    $startDate = date('Y-m-d', strtotime("-$timeInterval days"));
-
-    $query = 'query GetZoneTopPaths {
+    }',
+    'topPaths' => 'query GetZoneTopPaths {
         viewer {
             zones(filter: {zoneTag: "' . $zoneId . '" }) {
                 topPaths: httpRequestsAdaptiveGroups(
                     filter: {
-                        date_gt: "' . $startDate . '"
+                        date_gt: "' . $startDate8 . '"
                     }
                     orderBy: [date_DESC]
                     limit: 10000
@@ -253,231 +137,236 @@ try {
                 }
             }
         }
-    }';
+    }',
+    'topCountries' => 'query GetZoneTopNs {
+        viewer {
+            zones(filter: {zoneTag: "' . $zoneId . '"}) {
+                countries: httpRequestsAdaptiveGroups(
+                    filter: {
+                        date_gt: "' . $startDate8 . '"
+                    }
+                    orderBy: [date_DESC]
+                    limit: 10000
+                ) {
+                    count
+                    avg {
+                        sampleInterval
+                    }
+                    sum {
+                        edgeResponseBytes
+                        visits
+                    }
+                    dimensions {
+                        date
+                        metric: clientCountryName
+                    }
+                }
+            }
+        }
+    }'
+];
 
-    // Initialize cURL handle
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, 'https://api.cloudflare.com/client/v4/graphql');
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['query' => $query]));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+$mh = curl_multi_init();
+$curlHandles = [];
+
+foreach ($queries as $key => $query) {
+    $curlHandles[$key] = curl_init();
+    curl_setopt($curlHandles[$key], CURLOPT_URL, 'https://api.cloudflare.com/client/v4/graphql');
+    curl_setopt($curlHandles[$key], CURLOPT_POST, 1);
+    curl_setopt($curlHandles[$key], CURLOPT_POSTFIELDS, json_encode(['query' => $query]));
+    curl_setopt($curlHandles[$key], CURLOPT_HTTPHEADER, [
         'Authorization: Bearer ' . $apiToken,
         'Content-Type: application/json'
     ]);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($curlHandles[$key], CURLOPT_RETURNTRANSFER, 1);
 
-    // Execute the cURL request
-    $response = curl_exec($ch);
+    curl_multi_add_handle($mh, $curlHandles[$key]);
+}
 
-    // Check for errors
-    if ($response !== false) {
-        // Parse the JSON response
-        $responseArray = json_decode($response, true);
+$running = null;
+do {
+    curl_multi_exec($mh, $running);
+} while ($running > 0);
 
-        // Check for errors
-        if (isset($responseArray['errors'])) {
-            // Output the errors for debugging
-            var_dump($responseArray['errors']);
-            echo 'API request returned errors.';
+$results = [];
+foreach ($curlHandles as $key => $ch) {
+    $results[$key] = curl_multi_getcontent($ch);
+    curl_multi_remove_handle($mh, $ch);
+    curl_close($ch);
+}
+
+curl_multi_close($mh);
+
+$httpRequestsData = json_decode($results['httpRequests'], true);
+$topPathsData = json_decode($results['topPaths'], true);
+$topCountriesData = json_decode($results['topCountries'], true);
+
+// Process httpRequestsData
+if ($httpRequestsData !== null) {
+    $tableData = [];
+    $totals = ['requests' => 0, 'pageViews' => 0, 'uniqueVisitors' => 0, 'requestsPerVisitor' => 0, 'pageViewsPerVisitor' => 0];
+
+    foreach ($httpRequestsData['data']['viewer']['zones'][0]['httpRequests1dGroups'] as $group) {
+        $date = $group['dimensions']['date'];
+        $requests = $group['sum']['requests'];
+        $pageViews = $group['sum']['pageViews'];
+        $uniqueVisitors = $group['uniq']['uniques'];
+
+        if (isset($tableData[$date])) {
+            $tableData[$date]['requests'] += $requests;
+            $tableData[$date]['pageViews'] += $pageViews;
+            $tableData[$date]['uniqueVisitors'] += $uniqueVisitors;
         } else {
-            // Extract the relevant data
-            $zones = $responseArray['data']['viewer']['zones'];
+            $tableData[$date] = [
+                'date' => $date,
+                'requests' => $requests,
+                'pageViews' => $pageViews,
+                'uniqueVisitors' => $uniqueVisitors,
+                'requestsPerVisitor' => 0,
+                'pageViewsPerVisitor' => 0,
+            ];
+        }
 
-            // Check if there are any zones
-            if (empty($zones)) {
-                echo 'No zones available.';
-            } else {
-                // Get the first zone
-                $zone = $zones[0];
+        $totals['requests'] += $requests;
+        $totals['pageViews'] += $pageViews;
+        $totals['uniqueVisitors'] += $uniqueVisitors;
+    }
 
-                if (isset($zone['topPaths'])) {
-                    $topPaths = $zone['topPaths'];
-
-                    // Combine entries with the same path and sum up the pageViews
-                    $pathsWithSum = [];
-                    foreach ($topPaths as $pathData) {
-                        $path = $pathData['dimensions']['path'];
-                        $pageViews = $pathData['sum']['pageViews'];
-
-                        if (isset($pathsWithSum[$path])) {
-                            // If path exists, add pageViews
-                            $pathsWithSum[$path] += $pageViews;
-                        } else {
-                            // If path doesn't exist, create a new entry
-                            $pathsWithSum[$path] = $pageViews;
-                        }
-                    }
-
-                    // Remove paths with zero page views
-                    $pathsWithSum = array_filter($pathsWithSum, function ($pageViews) {
-                        return $pageViews > 0;
-                    });
-
-                    // Sort the results by the sum of pageViews
-                    arsort($pathsWithSum);
-
-                    // Take the top 100 paths
-                    $pathsWithSum = array_slice($pathsWithSum, 0, 100);
-
-                    echo '<hr/><h3>Highlighting Top 100 Page Views - Last 8 Days (Filtered)</h3>';
-                    // Start building the HTML table
-                    echo '<div class="table_style1"><table border="1">';
-                    echo '<tr><th>Path</th><th>Page Views</th></tr>';
-
-                    foreach ($pathsWithSum as $path => $pageViews) {
-                        if ($path)
-                            if (strpos($path, 'import') === false && strpos($path, 'insert') === false && strpos($path, '%') === false && strpos($path, '//') === false && strpos($path, '404.php') === false && strpos($path, '&') === false && strpos($path, '.php/') === false) {
-                                echo '<tr>';
-                                echo '<td><a href="' . $path . '" target="_blank">' . $path . '</a></td>';
-echo '<td>' . $pageViews . '</td>';
-echo '</tr>';
-}
-}
-// Add a row at the bottom for totals
-                echo '<tr><td><strong>Total</strong></td><td><strong>' . array_sum($pathsWithSum) . '</strong></td></tr>';
-
-                // Close the table
-                echo '</table></div>';
-            } else {
-                echo 'No topPaths data available.';
-            }
+    foreach ($tableData as $date => &$data) {
+        if ($data['uniqueVisitors'] > 0) {
+            $data['requestsPerVisitor'] = $data['requests'] / $data['uniqueVisitors'];
+            $data['pageViewsPerVisitor'] = $data['pageViews'] / $data['uniqueVisitors'];
+        } else {
+            $data['requestsPerVisitor'] = 0;
+            $data['pageViewsPerVisitor'] = 0;
         }
     }
-} else {
-    echo 'API request failed with status code: ' . curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+    echo '<div style="text-align: center;"><div class="b_chart"><div id="your_div_id" style="width: 900px;height: 600px;"></div></div></div><hr/>';
+
+    echo '<h3>Comprehensive Site Performance Overview - Last 30 Days</h3>';
+    echo '<div class="table_style1"><table border="1">';
+    echo '<tr><th>Date</th><th>Requests</th><th>Page Views</th><th>Unique Visitors</th><th>Requests per Visitor</th><th>Page Views per Visitor</th></tr>';
+
+    foreach ($tableData as $rowData) {
+        echo '<tr>';
+        echo '<td>' . $rowData['date'] . '</td>';
+        echo '<td>' . $rowData['requests'] . '</td>';
+        echo '<td>' . $rowData['pageViews'] . '</td>';
+        echo '<td>' . $rowData['uniqueVisitors'] . '</td>';
+        echo '<td>' . number_format($rowData['requestsPerVisitor'], 2) . '</td>';
+        echo '<td>' . number_format($rowData['pageViewsPerVisitor'], 2) . '</td>';
+        echo '</tr>';
+    }
+
+    echo '<tr>';
+    echo '<td><strong>Totals</strong></td>';
+    echo '<td><strong>' . $totals['requests'] . '</strong></td>';
+    echo '<td><strong>' . $totals['pageViews'] . '</strong></td>';
+    echo '<td><strong>' . $totals['uniqueVisitors'] . '</strong></td>';
+    echo '<td><strong>' . number_format(($totals['uniqueVisitors'] > 0) ? $totals['requests'] / $totals['uniqueVisitors'] : 0, 2) . '</strong></td>';
+    echo '<td><strong>' . number_format(($totals['uniqueVisitors'] > 0) ? $totals['pageViews'] / $totals['uniqueVisitors'] : 0, 2) . '</strong></td>';
+    echo '</tr>';
+
+    echo '</table></div>';
 }
 
-// Close the cURL handle
-curl_close($ch);
+// Process topPathsData
+if ($topPathsData !== null) {
+    $zones = $topPathsData['data']['viewer']['zones'];
 
-$timeInterval = 8; // Adjust this based on your requirements
-$startDate = date('Y-m-d', strtotime("-$timeInterval days"));
+    if (!empty($zones) && isset($zones[0]['topPaths'])) {
+        $topPaths = $zones[0]['topPaths'];
+        $pathsWithSum = [];
 
-$query = 'query GetZoneTopNs {
-    viewer {
-        zones(filter: {zoneTag: "' . $zoneId . '"}) {
-            countries: httpRequestsAdaptiveGroups(
-                filter: {
-                    date_gt: "' . $startDate . '"
-                }
-                orderBy: [date_DESC]
-                limit: 10000
-            ) {
-                count
-                avg {
-                    sampleInterval
-                }
-                sum {
-                    edgeResponseBytes
-                    visits
-                }
-                dimensions {
-                    date
-                    metric: clientCountryName
-                }
+        foreach ($topPaths as $pathData) {
+            $path = $pathData['dimensions']['path'];
+            $pageViews = $pathData['sum']['pageViews'];
+
+            if (isset($pathsWithSum[$path])) {
+                $pathsWithSum[$path] += $pageViews;
+            } else {
+                $pathsWithSum[$path] = $pageViews;
             }
         }
-    }
-}';
 
-// Initialize cURL handle
-$ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, 'https://api.cloudflare.com/client/v4/graphql');
-curl_setopt($ch, CURLOPT_POST, 1);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['query' => $query]));
-curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    'Authorization: Bearer ' . $apiToken,
-    'Content-Type: application/json'
-]);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $pathsWithSum = array_filter($pathsWithSum, function ($pageViews) {
+            return $pageViews > 0;
+        });
 
-// Execute the cURL request
-$response = curl_exec($ch);
+        arsort($pathsWithSum);
+        $pathsWithSum = array_slice($pathsWithSum, 0, 100);
 
-// Prepare JavaScript array for tracking processed countries
-echo '<script>var processedCountriesJS = [];</script>';
+        echo '<hr/><h3>Highlighting Top 100 Page Views - Last 8 Days (Filtered)</h3>';
+        echo '<div class="table_style1"><table border="1">';
+        echo '<tr><th>Path</th><th>Page Views</th></tr>';
 
-// Check for errors
-if ($response !== false) {
-    // Parse the JSON response
-    $responseArray = json_decode($response, true);
+        foreach ($pathsWithSum as $path => $pageViews) {
+            if ($path && strpos($path, 'import') === false && strpos($path, 'insert') === false && strpos($path, '%') === false && strpos($path, '//') === false && strpos($path, '404.php') === false && strpos($path, '&') === false && strpos($path, '.php/') === false) {
+                echo '<tr>';
+                echo '<td><a href="' . $path . '" target="_blank">' . $path . '</a></td>';
+                echo '<td>' . $pageViews . '</td>';
+                echo '</tr>';
+            }
+        }
 
-    // Check for errors
-    if (isset($responseArray['errors'])) {
-        // Output the errors for debugging
-        var_dump($responseArray['errors']);
-        echo 'API request returned errors.';
+        echo '<tr><td><strong>Total</strong></td><td><strong>' . array_sum($pathsWithSum) . '</strong></td></tr>';
+        echo '</table></div>';
     } else {
-        // Extract the relevant data
-        $zones = $responseArray['data']['viewer']['zones'];
-
-        // Check if there are any zones
-        if (empty($zones)) {
-            echo 'No zones available.';
-        } else {
-            // Get the first zone
-            $zone = $zones[0];
-
-            // Check if countries data is available
-            if (isset($zone['countries'])) {
-                $countries = $zone['countries'];
-
-                // Combine entries with the same country and sum up the counts
-                $countriesWithSum = [];
-                foreach ($countries as $countryData) {
-
-                    $country = $countryData['dimensions']['metric'];
-                    $count = $countryData['count'];
-
-                    // Add country to JavaScript array and check for duplicates
-                    echo '<script>
-                            if (processedCountriesJS.includes("' . $country . '")) {
-                                console.log("Duplicate entry found for country: ' . $country . '");
-                            } else {
-                                processedCountriesJS.push("' . $country . '");
-                            }
-                          </script>';
-
-                    // Aggregate data for the same country
-                    if (isset($countriesWithSum[$country])) {
-                        $countriesWithSum[$country] += $count;
-                    } else {
-                        $countriesWithSum[$country] = $count;
-                    }
-                }
-
-                // Sort the results by the count of each country in descending order
-                arsort($countriesWithSum);
-
-                echo '<hr/><h3>Top Countries by Count - Last 8 Days</h3>';
-                // Start building the HTML table
-                echo '<div class="table_style1"><table border="1">';
-                echo '<tr><th>Country</th><th>Count</th></tr>';
-
-                foreach ($countriesWithSum as $country => $count) {
-                    echo '<tr>';
-                    echo '<td>' . $country . '</td>';
-                    echo '<td>' . $count . '</td>';
-                    echo '</tr>';
-                }
-
-                // Add a row at the bottom for totals
-                echo '<tr><td><strong>Total</strong></td><td><strong>' . array_sum($countriesWithSum) . '</strong></td></tr>';
-
-                // Close the table
-                echo '</table></div>';
-            } else {
-                echo 'No countries data available.';
-            }
-        }
+        echo 'No topPaths data available.';
     }
-} else {
-    echo 'API request failed with status code: ' . curl_getinfo($ch, CURLINFO_HTTP_CODE);
 }
 
-// Close the cURL handle
-curl_close($ch);
+// Process topCountriesData
+if ($topCountriesData !== null) {
+    $zones = $topCountriesData['data']['viewer']['zones'];
 
+    if (!empty($zones) && isset($zones[0]['countries'])) {
+        $countries = $zones[0]['countries'];
+        $countriesWithSum = [];
+
+        echo '<script>var processedCountriesJS = [];</script>';
+
+        foreach ($countries as $countryData) {
+            $country = $countryData['dimensions']['metric'];
+            $count = $countryData['count'];
+
+            echo '<script>
+                if (processedCountriesJS.includes("' . $country . '")) {
+                    console.log("Duplicate entry found for country: ' . $country . '");
+                } else {
+                    processedCountriesJS.push("' . $country . '");
+                }
+              </script>';
+
+            if (isset($countriesWithSum[$country])) {
+                $countriesWithSum[$country] += $count;
+            } else {
+                $countriesWithSum[$country] = $count;
+            }
+        }
+
+        arsort($countriesWithSum);
+
+        echo '<hr/><h3>Top Countries by Count - Last 8 Days</h3>';
+        echo '<div class="table_style1"><table border="1">';
+        echo '<tr><th>Country</th><th>Count</th></tr>';
+
+
+
+        foreach ($countriesWithSum as $country => $count) {
+            echo '<tr>';
+            echo '<td>' . $country . '</td>';
+            echo '<td>' . $count . '</td>';
+            echo '</tr>';
+        }
+
+        echo '<tr><td><strong>Total</strong></td><td><strong>' . array_sum($countriesWithSum) . '</strong></td></tr>';
+        echo '</table></div>';
+    } else {
+        echo 'No countries data available.';
+    }
+}
 
 // Google Chart
 echo "<hr/><div class=\"center\"><b><i><a href=\"https://www.biblegateway.com/passage/?search=1+John+4%3A7-21&amp;version=NIV\" target=\"_blank\">God Is Love - 1 John 4:7-21</a></i></b><br /></div></div><br />";
@@ -508,9 +397,9 @@ echo '  slantedText: true,';
 echo '  slantedTextAngle: 45';
 echo '},';
 echo 'chartArea: {';
-echo '  width: "80%",';  // Adjust the width of the chart area
-echo '  height: "60%",';  // Adjust the height of the chart area
-echo '  bottom: 150,';  // Increase the bottom padding
+echo '  width: "80%",';
+echo '  height: "60%",';
+echo '  bottom: 150,';
 echo ' top: 40';
 echo '},';
 echo '};';
@@ -519,10 +408,25 @@ echo 'var chart = new google.visualization.LineChart(document.getElementById("yo
 echo 'chart.draw(data, options);';
 echo '}';
 echo '</script>';
-} catch (Exception $e) {
-echo "Error: " . $e->getMessage();
-}
 ?>
-
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Fetch and display monthly views and requests
+        fetch('/network/fetch_hits.php')
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);  // Add this line for debugging
+                if (data.pageViews !== undefined && data.requests !== undefined) {
+                    changeSpeechBubbleText('Hello! ' + data.requests.toLocaleString() + ' requests, ' + data.pageViews.toLocaleString() + ' page views for 30 days! Advertise with us!');
+                } else {
+                    changeSpeechBubbleText('Error: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                changeSpeechBubbleText('Error: ' + error);
+            });
+    });
+</script>
 </body>
 </html>
+
