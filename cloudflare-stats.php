@@ -10,6 +10,13 @@ $header = "<meta name=\"keywords\" content=\"Vonwallace.com Real-time Website Cl
 <link rel=\"canonical\" href=\"/stats/cloudflare-stats.php\"/>
 
 <style>
+
+.icon-blue { color: #3498db;   }
+.icon-green { color: #2ecc71;   }
+.icon-orange { color: #e67e22;   }
+.icon-purple { color: #9b59b6;  }
+.icon-red { color: #e74c3c;  }
+
 .table_style1 {
   margin-bottom: 40px;
 }
@@ -19,6 +26,8 @@ h3 {
   font-weight: bold;
   margin-bottom: 20px;
 }
+
+h3 i { margin-right: 10px; }
 
 .b_chart {
 margin-top: 40px;
@@ -50,7 +59,6 @@ echo "<!DOCTYPE html >
             width: 100%;
         }
     </style>
-    <!-- Clarity tracking code for http://vonwallace.com/ -->
     <script>
         (function(c,l,a,r,i,t,y){
             c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -83,8 +91,8 @@ echo "<div class=\"wrapper\">
 
 require 'vendor/autoload.php';
 
-$apiToken = 'ZQRIaltc9IxrDXpuPD41hKvsu7jtlOWhymkvkI6l';
-$zoneId = '0720a8e58608f4f584b8a14b6b16394d';
+$apiToken = '';
+$zoneId = '';
 
 $timeInterval30 = 30;
 $timeInterval8 = 8;
@@ -93,7 +101,7 @@ $endDate = date('Y-m-d');
 $startDate30 = date('Y-m-d', strtotime("-$timeInterval30 days"));
 $startDate8 = date('Y-m-d', strtotime("-$timeInterval8 days"));
 
-$queries = [
+/*$queries = [
     'httpRequests' => 'query {
         viewer {
             zones(filter: { zoneTag: "' . $zoneId . '" }) {
@@ -103,7 +111,7 @@ $queries = [
                         date_leq: "' . $endDate . '"
                     }
                     orderBy: [date_ASC]
-                    limit: 10000
+                    limit: 300
                 ) {
                     dimensions { date }
                     uniq {
@@ -146,7 +154,80 @@ $queries = [
                         date_gt: "' . $startDate8 . '"
                     }
                     orderBy: [date_DESC]
-                    limit: 10000
+                    limit: 300
+                ) {
+                    count
+                    avg {
+                        sampleInterval
+                    }
+                    sum {
+                        edgeResponseBytes
+                        visits
+                    }
+                    dimensions {
+                        date
+                        metric: clientCountryName
+                    }
+                }
+            }
+        }
+    }'
+];*/
+
+
+$queries = [
+    'httpRequests' => 'query {
+        viewer {
+            zones(filter: { zoneTag: "' . $zoneId . '" }) {
+                httpRequests1dGroups(
+                    filter: {
+                        date_gt: "' . $startDate30 . '",
+                        date_leq: "' . $endDate . '"
+                    }
+                    orderBy: [date_ASC]
+                    limit: 30
+                ) {
+                    dimensions { date }
+                    sum {
+                        requests
+                        pageViews
+                    }
+                    uniq {
+                        uniques
+                    }
+                }
+            }
+        }
+    }',
+    'topPaths' => 'query GetZoneTopPaths {
+        viewer {
+            zones(filter: {zoneTag: "' . $zoneId . '" }) {
+                topPaths: httpRequestsAdaptiveGroups(
+                    filter: {
+                        date_gt: "' . $startDate8 . '"
+                    }
+                    orderBy: [sum_visits_DESC]
+                    limit: 100
+                ) {
+                    dimensions {
+                        path: clientRequestPath
+                    }
+                    sum {
+                        pageViews: visits
+                    }
+                }
+            }
+        }
+    }',
+    'topCountries' => 'query GetZoneTopNs {
+        viewer {
+            zones(filter: {zoneTag: "' . $zoneId . '"}) {
+                countries: httpRequestsAdaptiveGroups(
+                    filter: {
+                        date_gt: "' . $startDate8 . '"
+                    }
+                    orderBy: [date_DESC]
+                    limit: 300
                 ) {
                     count
                     avg {
@@ -166,8 +247,11 @@ $queries = [
     }'
 ];
 
+
 $mh = curl_multi_init();
 $curlHandles = [];
+$start_times = [];
+$end_times = [];
 
 foreach ($queries as $key => $query) {
     $curlHandles[$key] = curl_init();
@@ -181,11 +265,19 @@ foreach ($queries as $key => $query) {
     curl_setopt($curlHandles[$key], CURLOPT_RETURNTRANSFER, 1);
 
     curl_multi_add_handle($mh, $curlHandles[$key]);
+    $start_times[$key] = microtime(true);
 }
 
 $running = null;
 do {
     curl_multi_exec($mh, $running);
+    while ($info = curl_multi_info_read($mh)) {
+        $ch = $info['handle'];
+        $key = array_search($ch, $curlHandles);
+        if ($key !== false) {
+            $end_times[$key] = microtime(true);
+        }
+    }
 } while ($running > 0);
 
 $results = [];
@@ -201,7 +293,6 @@ $httpRequestsData = json_decode($results['httpRequests'], true);
 $topPathsData = json_decode($results['topPaths'], true);
 $topCountriesData = json_decode($results['topCountries'], true);
 
-// Process httpRequestsData
 if ($httpRequestsData !== null) {
     $tableData = [];
     $totals = ['requests' => 0, 'pageViews' => 0, 'uniqueVisitors' => 0, 'requestsPerVisitor' => 0, 'pageViewsPerVisitor' => 0];
@@ -244,7 +335,9 @@ if ($httpRequestsData !== null) {
 
     echo '<div style="text-align: center;"><div class="b_chart"><div id="your_div_id" style="width: 900px;height: 600px;"></div></div></div><hr/>';
 
-    echo '<h3>Comprehensive Site Performance Overview - Last 30 Days</h3>';
+    $httpRequestsTime = ($end_times['httpRequests'] - $start_times['httpRequests']) * 1000;
+    echo '<h3><i class="fas fa-calendar-alt icon-green"></i> Comprehensive Site Performance Overview - Last 30 Days (API request: ' . number_format($httpRequestsTime, 2) . 'ms)</h3>';
+
     echo '<div class="table_style1"><table border="1">';
     echo '<tr><th>Date</th><th>Requests</th><th>Page Views</th><th>Unique Visitors</th><th>Requests per Visitor</th><th>Page Views per Visitor</th></tr>';
 
@@ -271,7 +364,6 @@ if ($httpRequestsData !== null) {
     echo '</table></div>';
 }
 
-// Process topPathsData
 if ($topPathsData !== null) {
     $zones = $topPathsData['data']['viewer']['zones'];
 
@@ -297,7 +389,9 @@ if ($topPathsData !== null) {
         arsort($pathsWithSum);
         $pathsWithSum = array_slice($pathsWithSum, 0, 100);
 
-        echo '<hr/><h3>Highlighting Top 100 Page Views - Last 8 Days (Filtered)</h3>';
+        $topPathsTime = ($end_times['topPaths'] - $start_times['topPaths']) * 1000;
+        echo '<hr/><h3><i class="fas fa-eye icon-orange"></i> Highlighting Top 100 Page Views - Last 8 Days (Filtered) (API request: ' . number_format($topPathsTime, 2) . 'ms)</h3>';
+        $filteredTotal = 0;
         echo '<div class="table_style1"><table border="1">';
         echo '<tr><th>Path</th><th>Page Views</th></tr>';
 
@@ -307,22 +401,25 @@ if ($topPathsData !== null) {
                 echo '<td><a href="' . $path . '" target="_blank">' . $path . '</a></td>';
                 echo '<td>' . $pageViews . '</td>';
                 echo '</tr>';
+                $filteredTotal += $pageViews;
             }
         }
 
-        echo '<tr><td><strong>Total</strong></td><td><strong>' . array_sum($pathsWithSum) . '</strong></td></tr>';
+       // echo '<tr><td><strong>Total</strong></td><td><strong>' . array_sum($pathsWithSum) . '</strong></td></tr>';
+
+        echo '<tr><td><strong>Total (Filtered)</strong></td><td><strong>' . $filteredTotal . '</strong></td></tr>';
         echo '</table></div>';
     } else {
         echo 'No topPaths data available.';
     }
 }
 
-// Process topCountriesData
 if ($topCountriesData !== null) {
     $zones = $topCountriesData['data']['viewer']['zones'];
 
     if (!empty($zones) && isset($zones[0]['countries'])) {
         $countries = $zones[0]['countries'];
+
         $countriesWithSum = [];
 
         echo '<script>var processedCountriesJS = [];</script>';
@@ -348,11 +445,11 @@ if ($topCountriesData !== null) {
 
         arsort($countriesWithSum);
 
-        echo '<hr/><h3>Top Countries by Count - Last 8 Days</h3>';
+        $topCountriesTime = ($end_times['topCountries'] - $start_times['topCountries']) * 1000;
+        echo '<hr/><h3><i class="fas fa-globe icon-purple"></i> Top Countries by Count - Last 8 Days (API request: ' . number_format($topCountriesTime, 2) . 'ms)</h3>';
+
         echo '<div class="table_style1"><table border="1">';
         echo '<tr><th>Country</th><th>Count</th></tr>';
-
-
 
         foreach ($countriesWithSum as $country => $count) {
             echo '<tr>';
@@ -368,10 +465,8 @@ if ($topCountriesData !== null) {
     }
 }
 
-// Google Chart
 echo "<hr/><div class=\"center\"><b><i><a href=\"https://www.biblegateway.com/passage/?search=1+John+4%3A7-21&amp;version=NIV\" target=\"_blank\">God Is Love - 1 John 4:7-21</a></i></b><br /></div></div><br />";
 
-// JavaScript for Google Chart
 echo '<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>';
 echo '<script type="text/javascript">';
 echo 'google.charts.load("current", {"packages":["corechart"]});';
@@ -411,11 +506,10 @@ echo '</script>';
 ?>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        // Fetch and display monthly views and requests
         fetch('/network/fetch_hits.php')
             .then(response => response.json())
             .then(data => {
-                console.log(data);  // Add this line for debugging
+                console.log(data);
                 if (data.pageViews !== undefined && data.requests !== undefined) {
                     changeSpeechBubbleText('Hello! ' + data.requests.toLocaleString() + ' requests, ' + data.pageViews.toLocaleString() + ' page views for 30 days! Advertise with us!');
                 } else {
@@ -429,4 +523,3 @@ echo '</script>';
 </script>
 </body>
 </html>
-
