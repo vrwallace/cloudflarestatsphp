@@ -148,31 +148,26 @@ $queries = [
         }
     }',
     'topCountries' => 'query GetZoneTopNs {
-        viewer {
-            zones(filter: {zoneTag: "' . $zoneId . '"}) {
-                countries: httpRequestsAdaptiveGroups(
-                    filter: {
-                        date_gt: "' . $startDate8 . '"
-                    }
-                    orderBy: [date_DESC]
-                    limit: 300
-                ) {
-                    count
-                    avg {
-                        sampleInterval
-                    }
-                    sum {
-                        edgeResponseBytes
-                        visits
-                    }
-                    dimensions {
-                        date
-                        metric: clientCountryName
-                    }
+    viewer {
+        zones(filter: {zoneTag: "' . $zoneId . '"}) {
+            countries: httpRequestsAdaptiveGroups(
+                filter: {
+                    date_gt: "' . $startDate8 . '"
+                }
+                orderBy: [sum_visits_DESC]
+                limit: 300
+            ) {
+                count
+                sum {
+                    visits
+                }
+                dimensions {
+                    metric: clientCountryName
                 }
             }
         }
-    }'
+    }
+}'
 
 
 ];
@@ -222,6 +217,10 @@ curl_multi_close($mh);
 $httpRequestsData = json_decode($results['httpRequests'], true);
 $topPathsData = json_decode($results['topPaths'], true);
 $topCountriesData = json_decode($results['topCountries'], true);
+//$topInvalidPathsData = json_decode($results['topInvalidPaths'], true);
+//$top404PagesData = json_decode($results['top404Pages'], true);
+//$allPagesData = json_decode($results['allPages'], true);
+//$redirects302Data = json_decode($results['redirects302'], true);
 
 
 if ($httpRequestsData !== null) {
