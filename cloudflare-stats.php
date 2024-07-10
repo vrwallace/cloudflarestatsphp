@@ -59,7 +59,13 @@ echo "<!DOCTYPE html >
             width: 100%;
         }
     </style>
-   
+    <script>
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src=\"https://www.clarity.ms/tag/\"+i+\"?ref=bwt\";
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, \"clarity\", \"script\", \"h7m0khkumk\");
+    </script>
 
     <link href=\"/bootstrap/css/bootstrap.min.css\" rel=\"stylesheet\" crossorigin=\"anonymous\">
     <script src=\"/bootstrap/js/bootstrap.bundle.min.js\"  crossorigin=\"anonymous\"></script>
@@ -167,6 +173,8 @@ $queries = [
             }
         }
     }'
+
+
 ];
 
 
@@ -214,6 +222,7 @@ curl_multi_close($mh);
 $httpRequestsData = json_decode($results['httpRequests'], true);
 $topPathsData = json_decode($results['topPaths'], true);
 $topCountriesData = json_decode($results['topCountries'], true);
+
 
 if ($httpRequestsData !== null) {
     $tableData = [];
@@ -318,7 +327,10 @@ if ($topPathsData !== null) {
         echo '<tr><th>Path</th><th>Page Views</th></tr>';
 
         foreach ($pathsWithSum as $path => $pageViews) {
-            if ($path && strpos($path, 'import') === false && strpos($path, 'insert') === false && strpos($path, '%') === false && strpos($path, '//') === false && strpos($path, '404.php') === false && strpos($path, '&') === false && strpos($path, '.php/') === false) {
+            if ($path && strpos($path, 'import') === false && strpos($path, 'insert') === false && strpos($path, '%') === false && strpos($path, '//') === false && strpos($path, '404.php') === false && strpos($path, '&') === false && strpos($path, '.php/') === false && strpos($path, 'banner') === false) {
+               // if ($path && strpos($path, 'import') === false && strpos($path, 'insert') === false && strpos($path, '%') === false && strpos($path, '//') === false  && strpos($path, '&') === false && strpos($path, '.php/') === false && strpos($path, 'banner') === false) {
+
+                    //if ($path && strpos($path, 'import') === false && strpos($path, 'insert') === false){
                 echo '<tr>';
                 echo '<td><a href="' . $path . '" target="_blank">' . $path . '</a></td>';
                 echo '<td>' . $pageViews . '</td>';
@@ -386,6 +398,9 @@ if ($topCountriesData !== null) {
         echo 'No countries data available.';
     }
 }
+
+
+
 
 echo "<hr/><div class=\"center\"><b><i><a href=\"https://www.biblegateway.com/passage/?search=1+John+4%3A7-21&amp;version=NIV\" target=\"_blank\">God Is Love - 1 John 4:7-21</a></i></b><br /></div></div><br />";
 
