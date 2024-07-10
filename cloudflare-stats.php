@@ -441,22 +441,6 @@ echo 'chart.draw(data, options);';
 echo '}';
 echo '</script>';
 ?>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        fetch('/network/fetch_hits.php')
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                if (data.pageViews !== undefined && data.requests !== undefined) {
-                    changeSpeechBubbleText('Hello! ' + data.requests.toLocaleString() + ' requests, ' + data.pageViews.toLocaleString() + ' page views for 30 days! Advertise with us!');
-                } else {
-                    changeSpeechBubbleText('Error: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                changeSpeechBubbleText('Error: ' + error);
-            });
-    });
-</script>
+
 </body>
 </html>
